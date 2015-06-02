@@ -84,7 +84,7 @@ $(document).ready(function() {
 	
   function updateSvg(status){
     
-	d3.json("city.json", function(topodata) {
+	d3.json("data/city.json", function(topodata) {
 	   var features = topojson.feature(topodata, topodata.objects["city"]).features;
 	   var color = d3.scale.linear().domain([0,7000000]).range(["#090","#f00"]);
 	   var path = d3.geo.path().projection( // 路徑產生器
