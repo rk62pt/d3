@@ -103,13 +103,7 @@
 
     		//console.log(density[cityName]);
     	}
-    	for(idx=carto_features.length - 1;idx>=0;idx--){
-    		var cityName = carto_features[idx].properties.C_Name;
-    		carto_features[idx].density = density[cityName];
-    		//console.log(features[idx].density);
-
-    		//console.log(density[cityName]);
-    	}
+    	
         var color = d3.scale.linear().domain([0,10000]).range(["#090","#f00"]);
 
 
