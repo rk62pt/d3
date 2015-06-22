@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<title>Title of the document</title>
+
+<link rel="stylesheet" type="text/css" href="javascripts/kickstart/css/kickstart.css" media="all" />                  <!-- KICKSTART -->
+</head>
+
+<body>
+<!-- HALF & HALF -->
+<div class="col_12">
+<h6>d3/<a href="index.html">index</a></h6>
+</div>
+<div class="col_12">
+<h3>d3 cartogram</h3>
+<hr class="alt1" />
+</div>
+<div class="col_6">
+<ul class="button-bar">
+<li><a href="javascript:void(0);" id="linkD" onclick="updateSvg('d');"><i class="fa"></i>default </a></li>
+<li><a href="javascript:void(0);" id="linkC" onclick="updateSvg('c');"><i class="fa"></i>cartograms</a></li>
+</ul>
+<svg id="svg1" width="800px" height="600px" viewBox="0 0 800 600"></svg>
+</div>
+<div class="col_6">
+<!-- Table w/Side -->
+<table class="sortable" cellspacing="0" cellpadding="0">
+<thead><tr class="alt first last">
+	<th rel="0" value="city">縣市</th>
+	<th rel="1" value="people">人口</th>
+</tr></thead>
+<tbody id="tbBody"></tbody>
+</table>
+</div>
+
+<script type="text/javascript" src="javascripts/jquery-1.11.3.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="javascripts/cartogram.js"></script>
+<script src="javascripts/lib.js"></script>
+<script src="javascripts/d3_tooltip.js"></script>
+<script type="text/javascript" src="javascripts/kickstart/js/kickstart.js"></script>                                  <!-- KICKSTART -->
+<script>
+var svg;
+var svg1;
+var carto_features;
+var carto;
+var features_carto;
+var density = {
+    "臺北市": 2705949,
+    "嘉義市": 271009,
+    "新竹市": 432559,
+    "基隆市": 372985,
+    "新北市": 3964888,
+    "桃園市": 2077929,
+    "臺中市": 2727460,
+    "彰化縣": 1289792,
+    "高雄市": 2778914,
+    "臺南市": 1885287,
+    "金門縣": 129423,
+    "澎湖縣": 101842,
+    "雲林縣": 702881,
+    "連江縣": 12485,
+    "新竹縣": 538153,
+    "苗栗縣": 566199,
+    "屏東縣": 845079,
+    "嘉義縣": 522587,
+    "宜蘭縣": 458273,
+    "南投縣": 512460,
+    "花蓮縣": 332674,
+    "臺東縣": 223559
+  };
+$(document).ready(function() {
+  d3.json("http://opendata.epa.gov.tw/ws/Data/UV/?format=json", function(data) {
+    console.log(data);
+
+  }
+	for (d in density) {
+	    var tr = $("<tr/>");
+		var th = $("<td/>").attr("value",d).html(d);
+		var td = $("<td/>").attr("value",density[d]).html(density[d]);
+		tr.append(th);
+		tr.append(td);
+		$("#tbBody").append(tr);
+	}
+
+
+	updateSvg("d");
+    });
+
+  function updateSvg(status){
+
+	d3.json("data/city.json", function(topodata) {
+	   var features = topojson.feature(topodata, topodata.objects["city"]).features;
+	   var color = d3.scale.linear().domain([0,7000000]).range(["#090","#f00"]);
+	   var path = d3.geo.path().projection( // 路徑產生器
+			d3.geo.mercator().center([121,24.5]).scale(6000) // 座標變換函式
+	   );
+	   carto = d3.cartogram()
+           .projection(d3.geo.mercator().center([121,24.5]).scale(6000))
+           .properties(function (d) {
+               // this adds the "properties" properties
+               // to the geometries
+			   //console.log(d);
+               return d.properties;
+           }).value(function(d) {
+			//console.log(d);
+              return +density[d.properties.C_Name];
+            });
+
+    topology = topodata;
+    geometries = topology.objects["city"].geometries;
+	features_carto = carto(topology, geometries).features;
+	carto_features = carto.features(topology, topology.objects["city"].geometries);
+	for(idx=features.length - 1;idx>=0;idx--){
+		var cityName = features[idx].properties.C_Name;
+		features[idx].density = density[cityName];
+		//console.log(features[idx].density);
+
+		//console.log(density[cityName]);
+	}
+	for(idx=features_carto.length - 1;idx>=0;idx--){
+		var cityName = features_carto[idx].properties.C_Name;
+		features_carto[idx].density = density[cityName];
+		//console.log(features[idx].density);
+
+		//console.log(density[cityName]);
+	}
+	var new_path;
+	var new_features;
+	if(status == "d"){
+		new_path = path;
+		new_features = features;
+	}else{
+		new_path = carto.path;
+		new_features = features_carto
+	}
+	svg1 = d3.select("#svg1");
+    color = d3.scale.linear().domain([0,7000000]).range(["#090","#f00"]);
+		svg1.selectAll("path").data(new_features).enter().append("path").attr({
+		d: new_path,
+		fill: function(d) {
+			//console.log(d);
+		  return color(d.density);
+		}
+	  }).on("click", function(d,i) {
+		alert(d.properties.C_Name);console.log(d);
+	  }).on("mouseover",function(d,i){
+			var currentState = this;
+			//console.log(currentState);
+			d3.select(this).style('fill-opacity', 1);
+		}).on('mouseout', function(d, i) {
+
+			d3.selectAll('path').style({'fill-opacity':.7});
+		}).call(d3.helper.tooltip(
+			function(d, i){
+			  return "<b>"+d.properties.C_Name + "</b>";
+			}
+		));
+		svg1.selectAll("path").transition()
+          .duration(2000)
+          .ease("linear")
+          .attr("fill", function(d) {
+            return color(d.density);
+          })
+          .attr("d", new_path);
+		  svg1.selectAll(".place-label").remove();
+	svg1.selectAll(".place-label").data(new_features).enter().append("text")
+	.transition()
+    .duration(1500)
+    .ease("bounce")
+    .attr("class", "place-label")
+    .attr("transform", function(d) { console.log(new_path.centroid(d)); return "translate(" + new_path.centroid(d) + ")"; })
+    .attr("dy", ".35em")
+    .text(function(d) {  return d.properties.C_Name; });
+	});
+  }
+
+  function tbSort(){
+	$("#tbBody").addClass("desc");
+	$("#tbBody").empty();
+	var sortAsc = $("#tbBody").hasClass("asc");
+	var sortDesc = $("#tbBody").hasClass("desc");
+	var obj = density;
+	if(sortAsc||sortDesc){
+		if(sortAsc){
+			obj = sortObjectDesc(obj);
+			$("#tbBody").removeClass("asc");
+			$("#tbBody").addClass("desc");
+		}else{
+			obj = sortObjectAsc(obj);
+			$("#tbBody").removeClass("desc");
+			$("#tbBody").addClass("asc");
+		}
+	}
+	for (d in obj) {
+	    var tr = $("<tr/>");
+		var th = $("<th/>").html(d);
+		var td = $("<td/>").html(obj[d]);
+		tr.append(th);
+		tr.append(td);
+		$("#tbBody").append(tr);
+	}
+  }
+
+  function sortObjectAsc(obj) {
+    var arr = [];
+    for (var prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+            arr.push({
+                'key': prop,
+                'value': obj[prop]
+            });
+        }
+    }
+    arr.sort(function(a, b) { return a.value - b.value; });
+	var newObj = {};
+	for(a in arr){
+		newObj[arr[a].key] = arr[a].value;
+	}
+    //arr.sort(function(a, b) { a.value.toLowerCase().localeCompare(b.value.toLowerCase()); }); //use this to sort as strings
+    return newObj; // returns array
+}
+
+function sortObjectDesc(obj) {
+    var arr = [];
+    for (var prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+            arr.push({
+                'key': prop,
+                'value': obj[prop]
+            });
+        }
+    }
+    arr.sort(function(a, b) { return b.value - a.value; });
+    //arr.sort(function(a, b) { a.value.toLowerCase().localeCompare(b.value.toLowerCase()); }); //use this to sort as strings
+	var newObj = {};
+	for(a in arr){
+		newObj[arr[a].key] = arr[a].value;
+	}
+    //arr.sort(function(a, b) { a.value.toLowerCase().localeCompare(b.value.toLowerCase()); }); //use this to sort as strings
+    return newObj; // returns array
+}
+</script>
+</body>
+
+</html>
