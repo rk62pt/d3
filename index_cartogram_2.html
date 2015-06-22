@@ -10,6 +10,9 @@
 <body>
 <!-- HALF & HALF -->
 <div class="col_12">
+<h3><a href="index.html">index</a></h3>
+</div>
+<div class="col_12">
 <h3>d3 cartogram</h3>
 <hr class="alt1" />
 </div>
@@ -77,13 +80,13 @@ $(document).ready(function() {
 		tr.append(td);
 		$("#tbBody").append(tr);
 	}
-	
-	
+
+
 	updateSvg("d");
     });
-	
+
   function updateSvg(status){
-    
+
 	d3.json("data/city.json", function(topodata) {
 	   var features = topojson.feature(topodata, topodata.objects["city"]).features;
 	   var color = d3.scale.linear().domain([0,7000000]).range(["#090","#f00"]);
@@ -93,7 +96,7 @@ $(document).ready(function() {
 	   carto = d3.cartogram()
            .projection(d3.geo.mercator().center([121,24.5]).scale(6000))
            .properties(function (d) {
-               // this adds the "properties" properties 
+               // this adds the "properties" properties
                // to the geometries
 			   //console.log(d);
                return d.properties;
@@ -101,7 +104,7 @@ $(document).ready(function() {
 			//console.log(d);
               return +density[d.properties.C_Name];
             });
-	
+
     topology = topodata;
     geometries = topology.objects["city"].geometries;
 	features_carto = carto(topology, geometries).features;
@@ -110,14 +113,14 @@ $(document).ready(function() {
 		var cityName = features[idx].properties.C_Name;
 		features[idx].density = density[cityName];
 		//console.log(features[idx].density);
-		
+
 		//console.log(density[cityName]);
 	}
 	for(idx=features_carto.length - 1;idx>=0;idx--){
 		var cityName = features_carto[idx].properties.C_Name;
 		features_carto[idx].density = density[cityName];
 		//console.log(features[idx].density);
-		
+
 		//console.log(density[cityName]);
 	}
 	var new_path;
@@ -137,8 +140,8 @@ $(document).ready(function() {
 			//console.log(d);
 		  return color(d.density);
 		}
-	  }).on("click", function(d,i) { 
-		alert(d.properties.C_Name);console.log(d); 
+	  }).on("click", function(d,i) {
+		alert(d.properties.C_Name);console.log(d);
 	  }).on("mouseover",function(d,i){
 			var currentState = this;
 			//console.log(currentState);
@@ -169,7 +172,7 @@ $(document).ready(function() {
     .text(function(d) {  return d.properties.C_Name; });
 	});
   }
-  
+
   function tbSort(){
 	$("#tbBody").addClass("desc");
 	$("#tbBody").empty();
@@ -196,7 +199,7 @@ $(document).ready(function() {
 		$("#tbBody").append(tr);
 	}
   }
-  
+
   function sortObjectAsc(obj) {
     var arr = [];
     for (var prop in obj) {
