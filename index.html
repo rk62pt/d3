@@ -30,14 +30,121 @@
 
       </header>
       <section>
-        <h3>d3 地圖＋cartongram:<a href="index_cartogram_2">人口及密度變形地圖</a></h3>
-
+        <h3>d3 地圖＋cartongram : <a href="index_cartogram_2">人口及密度變形地圖</a></h3>
+        <svg id="svg1" width="800px" height="600px" viewBox="0 0 800 600"></svg>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
       </footer>
     </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    <script type="text/javascript" src="javascripts/jquery-1.11.3.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script type="text/javascript" src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="javascripts/cartogram.js"></script>
+    <script src="javascripts/lib.js"></script>
+    <script src="javascripts/d3_tooltip.js"></script>
+    <script>
+    $(document).ready(function() {
+    var density = {
+        "臺北市": 9952.60,
+        "嘉義市": 4512.66,
+        "新竹市": 4151.27,
+        "基隆市": 2809.27,
+        "新北市": 1932.91,
+        "桃園市": 1692.09,
+        "臺中市": 1229.62,
+        "彰化縣": 1201.65,
+        "高雄市": 942.97,
+        "臺南市": 860.02,
+        "金門縣": 847.16,
+        "澎湖縣": 802.83,
+        "雲林縣": 545.57,
+        "連江縣": 435.21,
+        "新竹縣": 376.86,
+        "苗栗縣": 311.49,
+        "屏東縣": 305.03,
+        "嘉義縣": 275.18,
+        "宜蘭縣": 213.89,
+        "南投縣": 125.10,
+        "花蓮縣": 71.96,
+        "臺東縣": 63.75
+      };
+        d3.json("data/city.json", function(topodata) {
+    	 //console.log(topojson(topodata, topodata.objects["city"]));
+          var features = topojson.feature(topodata, topodata.objects["city"]).features;
+    	   var color = d3.scale.linear().domain([0,10000]).range(["#090","#f00"]);
+    //console.log(topodata);
+        var projection = d3.geo.mercator().center([121,24]).scale(6000);
+        var path = d3.geo.path().projection( // 路徑產生器
+    		d3.geo.mercator().center([121,24]).scale(6000) // 座標變換函式
+    	);
 
+    	carto = d3.cartogram()
+               .projection(d3.geo.mercator().center([121,24]).scale(6000))
+               .properties(function (d) {
+                   // this adds the "properties" properties
+                   // to the geometries
+    			   //console.log(d);
+                   return d.properties;
+               }).value(function(d) {
+    			//console.log(d);
+                  return +density[d.properties.C_Name];
+                });
+
+        topology = topodata;
+        geometries = topology.objects["city"].geometries;
+    	//console.log(carto);
+
+    	for(idx=features.length - 1;idx>=0;idx--){
+    		var cityName = features[idx].properties.C_Name;
+    		features[idx].density = density[cityName];
+    		//console.log(features[idx].density);
+
+    		//console.log(density[cityName]);
+    	}
+    	for(idx=carto_features.length - 1;idx>=0;idx--){
+    		var cityName = carto_features[idx].properties.C_Name;
+    		carto_features[idx].density = density[cityName];
+    		//console.log(features[idx].density);
+
+    		//console.log(density[cityName]);
+    	}
+        var color = d3.scale.linear().domain([0,10000]).range(["#090","#f00"]);
+
+
+      //d3.select("svg").selectAll("path").data(features).enter().append("path").attr("d",path);
+      //svg1
+      var svg1 = d3.select("#svg1")
+      svg1.selectAll("path").data(features).enter().append("path").attr({
+        d: path,
+        fill: function(d) {
+    		//console.log(d);
+          return color(d.density);
+        }
+      }).attr("class", "place")
+      .on("click", function(d,i) {
+    	alert(d.properties.C_Name);console.log(d);
+    	}).on("mouseover",function(d,i){
+    		var currentState = this;
+    		//console.log(currentState);
+            d3.select(this).style('fill-opacity', 1);
+    	}).on('mouseout', function(d, i) {
+
+    		d3.selectAll('path').style({'fill-opacity':.7});
+        }).call(d3.helper.tooltip(
+            function(d, i){
+              return "<b>"+d.properties.C_Name + "</b>";
+            }
+        ));
+
+    	svg1.selectAll(".place-label").data(features).enter().append("text")
+        .attr("class", "place-label")
+        .attr("transform", function(d) { console.log(path.centroid); return "translate(" + path.centroid(d) + ")"; })
+        .attr("dy", ".35em")
+        .text(function(d) { console.log(d.properties.C_Name); return d.properties.C_Name; });
+        });
+      });
+    </script>
   </body>
 </html>
